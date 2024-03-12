@@ -100,8 +100,8 @@ function compareObjects(obj1, obj2) {
  *    isEmptyObject({}) => true
  *    isEmptyObject({a: 1}) => false
  */
-function isEmptyObject(/* obj */) {
-  throw new Error('Not implemented');
+function isEmptyObject(obj) {
+  return Object.keys(obj).length === 0;
 }
 
 /**
@@ -120,8 +120,8 @@ function isEmptyObject(/* obj */) {
  *    immutableObj.newProp = 'new';
  *    console.log(immutableObj) => {a: 1, b: 2}
  */
-function makeImmutable(/* obj */) {
-  throw new Error('Not implemented');
+function makeImmutable(obj) {
+  return Object.freeze(obj);
 }
 
 /**
@@ -134,10 +134,21 @@ function makeImmutable(/* obj */) {
  *    makeWord({ a: [0, 1], b: [2, 3], c: [4, 5] }) => 'aabbcc'
  *    makeWord({ H:[0], e: [1], l: [2, 3, 8], o: [4, 6], W:[5], r:[7], d:[9]}) => 'HelloWorld'
  */
-function makeWord(/* lettersObject */) {
-  throw new Error('Not implemented');
-}
+function makeWord(lettersObject) {
+  const values = Object.values(lettersObject).reduce((acc, val) => {
+    acc.push(...val);
+    return acc;
+  }, []);
 
+  const array = values.map((val) => val);
+  values.forEach((_, idx) => {
+    array[idx] = Object.keys(lettersObject).find((key) =>
+      lettersObject[key].includes(idx)
+    );
+  });
+
+  return array.join('');
+}
 /**
  * There is a queue for tickets to a popular movie.
  * The ticket seller sells one ticket at a time strictly in order and give the change.
@@ -364,65 +375,74 @@ function group(array, keySelector, valueSelector) {
 
 const cssSelectorBuilder = {
   result: '',
-  sequence: {
-    element: 1,
-    id: 2,
-    class: 3,
-    attribute: 4,
-    pseudoCla: 5,
-    pseudoEl: 6,
-  },
-  lastWord: '',
 
-  currentState() {
-    this.result += this.lastWord;
+  element: function element(value) {
+    this.error(1);
+    const obj = Object.create(cssSelectorBuilder);
+    obj.i = 1;
+    obj.result = this.result + value;
+    return obj;
   },
 
-  element(value) {
-    this.lastWord = value;
-    this.currentState();
-    return this;
+  id: function id(value) {
+    this.error(2);
+    const obj = Object.create(cssSelectorBuilder);
+    obj.i = 2;
+    obj.result = `${this.result}#${value}`;
+    return obj;
   },
 
-  id(value) {
-    this.lastWord = `#${value}`;
-    this.currentState();
-    return this;
+  class: function cls(value) {
+    this.error(3);
+    const obj = Object.create(cssSelectorBuilder);
+    obj.i = 3;
+    obj.result = `${this.result}.${value}`;
+    return obj;
   },
 
-  class(value) {
-    this.lastWord = `.${value}`;
-    this.currentState();
-    return this;
+  attr: function attr(value) {
+    this.error(4);
+    const obj = Object.create(cssSelectorBuilder);
+    obj.i = 4;
+    obj.result = `${this.result}[${value}]`;
+    return obj;
   },
 
-  attr(value) {
-    this.lastWord = `[${value}]`;
-    this.currentState();
-    return this;
+  pseudoClass: function pseudoClass(value) {
+    this.error(5);
+    const obj = Object.create(cssSelectorBuilder);
+    obj.i = 5;
+    obj.result = `${this.result}:${value}`;
+    return obj;
   },
 
-  pseudoClass(value) {
-    this.lastWord = `:${value}`;
-    this.currentState();
-    return this;
+  pseudoElement: function pseudoelement(value) {
+    this.error(6);
+    const obj = Object.create(cssSelectorBuilder);
+    obj.i = 6;
+    obj.result = `${this.result}::${value}`;
+    return obj;
   },
 
-  pseudoElement(value) {
-    this.lastWord = `::${value}`;
-    this.currentState();
-    return this;
+  combine: function combine(selector1, combinator, selector2) {
+    const obj = Object.create(cssSelectorBuilder);
+    obj.result = `${selector1.result} ${combinator} ${selector2.result}`;
+    return obj;
   },
 
-  combine(selector1, combinator, selector2) {
-    this.lastWord = `${selector1} ${combinator} ${selector2}`;
-    this.currentState();
-    return this;
+  stringify: function stringify() {
+    return this.result;
   },
-  stringify() {
-    this.lastWord = this.result;
-    this.result = '';
-    return this.lastWord;
+
+  error: function error(newi) {
+    if (this.i > newi)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    if (this.i === newi && (newi === 1 || newi === 2 || newi === 6))
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
   },
 };
 
