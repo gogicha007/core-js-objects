@@ -152,8 +152,16 @@ function makeWord(/* lettersObject */) {
  *    sellTickets([25, 25, 50]) => true
  *    sellTickets([25, 100]) => false (The seller does not have enough money to give change.)
  */
-function sellTickets(/* queue */) {
-  throw new Error('Not implemented');
+function sellTickets(queue) {
+  if (queue.length === 0) return true;
+  let accrual = 0;
+  const change = queue.reduce((acc, val, idx, arr) => {
+    if (idx < arr.length - 1) {
+      accrual += val;
+    }
+    return accrual;
+  }, 0);
+  return queue.pop() - 25 <= change;
 }
 
 /**
@@ -169,8 +177,13 @@ function sellTickets(/* queue */) {
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  this.width = width;
+  this.height = height;
+
+  this.getArea = function getArea() {
+    return this.width * this.height;
+  };
 }
 
 /**
@@ -183,8 +196,8 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 /**
@@ -198,8 +211,10 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const obj = JSON.parse(json);
+  const values = Object.values(obj);
+  return new proto.constructor(...values);
 }
 
 /**
@@ -228,8 +243,26 @@ function fromJSON(/* proto, json */) {
  *      { country: 'Russia',  city: 'Saint Petersburg' }
  *    ]
  */
-function sortCitiesArray(/* arr */) {
-  throw new Error('Not implemented');
+function sortCitiesArray(arr) {
+  return arr
+    .sort((a, b) => {
+      if (a.city.toLowerCase() < b.city.toLowerCase()) {
+        return -1;
+      }
+      if (a.city.toLowerCase() > b.city.toLowerCase()) {
+        return 1;
+      }
+      return 0;
+    })
+    .sort((a, b) => {
+      if (a.country.toLowerCase() < b.country.toLowerCase()) {
+        return -1;
+      }
+      if (a.country.toLowerCase() > b.country.toLowerCase()) {
+        return 1;
+      }
+      return 0;
+    });
 }
 
 /**
@@ -262,8 +295,17 @@ function sortCitiesArray(/* arr */) {
  *    "Poland" => ["Lodz"]
  *   }
  */
-function group(/* array, keySelector, valueSelector */) {
-  throw new Error('Not implemented');
+function group(array, keySelector, valueSelector) {
+  return new Map(
+    Object.entries(
+      array.reduce((acc, val) => {
+        const key = keySelector(val);
+        if (acc[key] === undefined) acc[key] = [];
+        acc[key].push(valueSelector(val));
+        return acc;
+      }, {})
+    )
+  );
 }
 
 /**
@@ -321,32 +363,66 @@ function group(/* array, keySelector, valueSelector */) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  result: '',
+  sequence: {
+    element: 1,
+    id: 2,
+    class: 3,
+    attribute: 4,
+    pseudoCla: 5,
+    pseudoEl: 6,
+  },
+  lastWord: '',
+
+  currentState() {
+    this.result += this.lastWord;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    this.lastWord = value;
+    this.currentState();
+    return this;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    this.lastWord = `#${value}`;
+    this.currentState();
+    return this;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    this.lastWord = `.${value}`;
+    this.currentState();
+    return this;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    this.lastWord = `[${value}]`;
+    this.currentState();
+    return this;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    this.lastWord = `:${value}`;
+    this.currentState();
+    return this;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    this.lastWord = `::${value}`;
+    this.currentState();
+    return this;
+  },
+
+  combine(selector1, combinator, selector2) {
+    this.lastWord = `${selector1} ${combinator} ${selector2}`;
+    this.currentState();
+    return this;
+  },
+  stringify() {
+    this.lastWord = this.result;
+    this.result = '';
+    return this.lastWord;
   },
 };
 
