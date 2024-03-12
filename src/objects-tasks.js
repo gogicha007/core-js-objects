@@ -392,7 +392,7 @@ const cssSelectorBuilder = {
     return obj;
   },
 
-  class: function cls(value) {
+  class: function clss(value) {
     this.error(3);
     const obj = Object.create(cssSelectorBuilder);
     obj.i = 3;
